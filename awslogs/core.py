@@ -161,6 +161,8 @@ class AWSLogs(object):
                     yield do_wait
 
         def consumer():
+            if not self.watch:
+                f = open(f'logs_{datetime.now().strftime("%m%d_%H%M%S")}.log', mode='w', encoding='utf-8') # added by kanazawa
             for event in generator():
 
                 if event is do_wait:
@@ -209,7 +211,12 @@ class AWSLogs(object):
                         message = json.dumps(message)
                 output.append(message.rstrip())
 
-                print(' '.join(output))
+                # print(' '.join(output)) # comment out by kanazawa
+                message = re.sub(r'^.+(\[20\d\d)', r'\1', message) # added by kanazawa
+                if self.watch:
+                    print(message) # added by kanazawa
+                else:
+                    f.write(message + "\n") # added by kanazawa
                 try:
                     sys.stdout.flush()
                 except IOError as e:
@@ -219,6 +226,8 @@ class AWSLogs(object):
                     else:
                         # We don't want to handle any other errors from this
                         raise
+            if not self.watch:
+                f.close()
         try:
             consumer()
         except KeyboardInterrupt:
